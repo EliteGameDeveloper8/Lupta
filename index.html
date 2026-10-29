@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ro"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Arena Duel</title>
+<title>Lupte pe bune</title>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
@@ -17,7 +17,8 @@ button{font:inherit;cursor:pointer}
 .btn.b{background:var(--blue);color:#06233d;box-shadow:0 5px 0 #25689f}
 .btn.g{background:#37505b;color:#fff;box-shadow:0 5px 0 #243840}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.4)}
-#menu h1{font-size:clamp(44px,13vw,72px);color:var(--gold);text-shadow:0 4px 0 #7a5a08;line-height:1}
+.btn:disabled{opacity:.45}
+#menu h1{font-size:clamp(40px,11vw,64px);color:var(--gold);text-shadow:0 4px 0 #7a5a08;line-height:1}
 #menu .sub{color:#9fc0cc;max-width:300px;font-size:14px;line-height:1.4}
 #stat{font-size:13px;color:#9fc0cc;min-height:18px;max-width:300px}
 .spin{width:64px;height:64px;border-radius:50%;border:6px solid #2b4b59;border-top-color:var(--gold);animation:sp 1s linear infinite}
@@ -40,14 +41,26 @@ button{font:inherit;cursor:pointer}
 #res{position:absolute;inset:0;background:rgba(5,14,19,.82);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 #res.on{display:flex}#res h1{font-size:56px}
 #deck{justify-content:flex-start;overflow-y:auto;padding-top:24px}
+#dn{font-size:15px;color:#cfe3ea}
 #dg{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 10px;width:100%;max-width:440px;padding:8px 6px}
-.dc{position:relative;border:3px solid #34505c;border-radius:12px;background:var(--card);color:#fff;padding:14px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.6;font-size:13px}
-.dc.in{opacity:1;border-color:var(--gold)}
+.dc{position:relative;border:3px solid var(--rc,#34505c);border-radius:12px;background:var(--card);color:#fff;padding:16px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:.6}
+.dc.in{opacity:1}
 .dc canvas{width:48px;height:48px;pointer-events:none}
-#dn{font-size:14px;color:#cfe3ea;min-height:58px;max-width:440px;line-height:1.4}
+.dc.cur{opacity:1;box-shadow:0 0 0 3px var(--gold)}
+.dh{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px}.dh b{font-family:"Lilita One",sans-serif;font-weight:400;font-size:15px}
+.dp .dh{flex-direction:row;gap:10px}.dp .dh b{font-size:20px}
+.rb{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:9px;background:var(--rc)}
+.ck{display:none;position:absolute;top:3px;right:7px;color:var(--gold);font-weight:700}.dc.in .ck{display:block}
+.dp{grid-column:1/-1;text-align:left;display:flex;flex-direction:column;gap:8px;background:var(--card);border:3px solid var(--rc);border-radius:12px;padding:12px 10px 10px}
+.dt{grid-column:1/-1;text-align:left;font-family:"Lilita One",sans-serif;font-size:17px;color:#cfe3ea;padding:4px 2px 0}
+.dt.dm{font-family:"Trebuchet MS",system-ui,sans-serif;font-size:13px;color:#9fc0cc}
+.pv{width:100%;max-width:300px;height:auto;align-self:center;border-radius:8px;border:2px solid #2c4a57}
+.dd small{color:#b9d2db;font-size:13px;line-height:1.35}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;font-size:12px}.sg div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid #2c4a57;padding-bottom:2px}.sg span{color:#9fc0cc}.sg b{text-align:right}
+.dd .btn{font-size:17px;padding:10px;min-width:0}
 </style></head><body>
 <div class="scr on" id="menu">
-  <h1>Arena Duel</h1>
+  <h1>Lupte pe bune</h1>
   <div class="sub">Trimite trupe din toată lumea, apără-ți turnurile și dărâmă turnul rege al adversarului în 2 minute.</div>
   <button class="btn" id="bOn">Meci online</button>
   <button class="btn b" id="bBot">Joacă contra bot</button>
@@ -78,107 +91,226 @@ button{font:inherit;cursor:pointer}
     <button class="btn" id="bAg">Joacă din nou</button><button class="btn g" id="bMn">Meniu</button></div>
 </div>
 <script>
-const W=360,H=520,RY=260,BR=[90,270],LB='arenaduel-v1-';
-const Z=[1,1,1.9,.9,1.05,1,1,.85,1.1,1,.9,1.5,1.7,1,1.3];
+const W=360,H=520,RY=260,BR=[90,270],LB='luptepebune-v1-';
+const Z=[1,1,1.9,.9,1.05,1,1,.85,1.1,1,.9,1.5,1.7,1,1.3,1.25,1,1.3,1.2,1.35,1.1,1,1.3,1,1.1,.9,.9,1.2,1.3,1.2,1.2,1,1,1,1,1.15,1.9];
 const C=[
-{n:'Gardian',an:0,c:3,hp:700,d:80,cd:1.1,r:16,s:38,k:1,sk:'#f1c9a5',cl:'#c8202f',ds:'Gardă regală cu căciulă înaltă. Rezistent și foarte politicos, dar lovește tare.'},
-{n:'Francezi',an:1,c:3,hp:260,d:42,cd:1,r:92,s:40,k:2,ta:1,sk:'#f1c9a5',cl:'#2a4a9a',ds:'Doi arcași cu beretă, mustață și baghetă. Trag elegant de departe, inclusiv în aer.'},
-{n:'Yankeu',an:10,c:5,hp:2000,d:110,cd:1.5,r:18,s:26,k:1,tb:1,sk:'#f1c9a5',cl:'#2b4a9a',ds:'Uriaș cu pălărie de cowboy și burger în mână. Ignoră trupele și merge direct la turnuri.'},
-{n:'Luchadori',an:0,c:2,hp:170,d:52,cd:.7,r:12,s:72,k:3,sk:'#f1c9a5',cl:'#e8d5b5',ds:'Trei luptători mascați, rapizi și teatrali. Buni la contraatac.'},
-{n:'Rusul',an:2,c:4,hp:450,d:112,cd:1.1,r:100,s:38,k:1,ta:1,sk:'#f1c9a5',cl:'#4a5a3a',ds:'Furios, cu căciulă de blană și pușcă lungă. Lovește tare de la mare distanță.'},
-{n:'Foc',an:11,c:4,sp:1,sr:55,sd:330,td:160,ds:'Vrajă: explozie în zonă. Rănește tare trupele, mai puțin turnurile.'},
-{n:'Vikingi',an:0,c:5,hp:290,d:62,cd:1.3,r:14,s:44,k:3,sk:'#f1c9a5',cl:'#7a4a2a',ds:'Trei nordici cu coarne și topoare. Înaintează împreună.'},
-{n:'Mumii',an:0,c:1,hp:55,d:30,cd:1,r:10,s:62,k:3,sk:'#d9ceaa',cl:'#d9ceaa',ds:'Trei mumii egiptene ieftine. Bune ca să abată trupele grele.'},
-{n:'Dracula',an:3,c:5,hp:430,d:140,cd:1.4,r:95,s:36,k:1,ta:1,sa:28,sk:'#e8e0e8',cl:'#1a1020',ds:'Conte din Transilvania. Aruncă sfere de sânge cu efect în zonă.'},
-{n:'Săgeți',an:12,c:3,sp:1,sr:42,sd:150,td:75,ds:'Vrajă ieftină care curăță grupuri de unități slabe.'},
-{n:'Ninja',an:4,c:2,hp:150,d:100,cd:1.6,r:60,s:40,k:1,sa:30,sk:'#f1c9a5',cl:'#15151c',ds:'Aruncă bombe de fum care lovesc mai multe trupe de sol.'},
-{n:'Dragon',an:5,c:4,hp:800,d:95,cd:1.5,r:70,s:48,k:1,ta:1,ar:1,sa:28,sk:'#e63a2a',cl:'#d4202a',ds:'Dragon chinezesc care zboară peste râu și scuipă foc.'},
-{n:'Zeppelin',an:8,c:5,hp:1100,d:220,cd:2,r:12,s:36,k:1,tb:1,ar:1,sk:'#222',cl:'#222',ds:'Zboară direct la turnuri. Doar trupele care lovesc aerul îl pot opri.'},
-{n:'Bucătar',an:6,c:4,hp:560,d:40,cd:1.2,r:50,s:40,k:1,ta:1,hl:45,sk:'#f1c9a5',cl:'#f2f2f2',ds:'Bucătar italian cu pizza. Vindecă trupele aliate din apropiere.'},
-{n:'Tun',an:7,c:3,b:1,hp:650,d:60,cd:.7,r:105,s:0,k:1,life:30,sk:'#333',cl:'#333',ds:'Tun scoțian cu steag. Trage în trupele de sol, dispare după 30 s.'}];
-const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d');
+{n:'Gardian',an:0,c:3,rr:0,hp:700,d:80,cd:1.1,r:16,s:38,k:1,sk:'#f1c9a5',cl:'#c8202f',ds:'Gardă regală cu căciulă înaltă. Rezistent și foarte politicos, dar lovește tare.'},
+{n:'Francezi',an:1,c:3,rr:0,hp:240,d:42,cd:1,r:92,s:40,k:2,ta:1,pj:'Baghetă',sk:'#f1c9a5',cl:'#2a4a9a',ds:'Doi arcași cu beretă, mustață și baghetă. Trag elegant de departe, inclusiv în aer.'},
+{n:'Yankeu',an:10,c:5,rr:1,hp:2000,d:110,cd:1.5,r:18,s:26,k:1,tb:1,sk:'#f1c9a5',cl:'#2b4a9a',ds:'Uriaș cu pălărie de cowboy și burger în mână. Ignoră trupele și merge direct la turnuri.'},
+{n:'Luchadori',an:0,c:3,rr:0,hp:160,d:44,cd:.8,r:12,s:66,k:3,sk:'#f1c9a5',cl:'#e8d5b5',ds:'Trei luptători mascați, rapizi și teatrali. Buni la contraatac.'},
+{n:'Rusul',an:2,c:4,rr:1,hp:520,d:125,cd:1.1,r:100,s:38,k:1,ta:1,pj:'Glonț',sk:'#f1c9a5',cl:'#4a5a3a',ds:'Furios, cu căciulă de blană și pușcă lungă. Lovește tare de la mare distanță.'},
+{n:'Foc',an:11,c:4,rr:1,sp:1,sr:55,sd:330,td:160,ds:'Vrajă: explozie în zonă. Rănește tare trupele, mai puțin turnurile.'},
+{n:'Vikingi',an:0,c:5,rr:0,hp:330,d:66,cd:1.3,r:14,s:44,k:3,sk:'#f1c9a5',cl:'#7a4a2a',ds:'Trei nordici cu coarne și topoare. Înaintează împreună.'},
+{n:'Mumii',an:0,c:1,rr:0,hp:50,d:27,cd:1,r:10,s:62,k:3,sk:'#d9ceaa',cl:'#d9ceaa',ds:'Trei mumii egiptene ieftine. Bune ca să abată trupele grele.'},
+{n:'Dracula',an:3,c:5,rr:2,hp:560,d:140,cd:1.4,r:95,s:36,k:1,ta:1,sa:28,pj:'Sferă de sânge',sk:'#e8e0e8',cl:'#1a1020',ds:'Conte din Transilvania. Aruncă sfere de sânge cu efect în zonă.'},
+{n:'Săgeți',an:12,c:3,rr:0,sp:1,sr:50,sd:170,td:90,ds:'Vrajă ieftină care curăță grupuri de unități slabe.'},
+{n:'Ninja',an:4,c:2,rr:0,hp:150,d:100,cd:1.6,r:60,s:40,k:1,sa:30,pj:'Bombă de fum',sk:'#f1c9a5',cl:'#15151c',ds:'Aruncă bombe de fum care lovesc mai multe trupe de sol.'},
+{n:'Dragon',an:5,c:4,rr:2,hp:800,d:95,cd:1.5,r:70,s:48,k:1,ta:1,ar:1,sa:28,pj:'Flăcări',sk:'#e63a2a',cl:'#d4202a',ds:'Dragon chinezesc care zboară peste râu și scuipă foc.'},
+{n:'Zeppelin',an:8,c:5,rr:2,hp:1100,d:220,cd:2,r:12,s:36,k:1,tb:1,ar:1,sk:'#222',cl:'#222',ds:'Zboară direct la turnuri. Doar trupele care lovesc aerul îl pot opri.'},
+{n:'Bucătar',an:6,c:4,rr:2,hp:560,d:40,cd:1.2,r:50,s:40,k:1,ta:1,hl:45,sup:1,sk:'#f1c9a5',cl:'#f2f2f2',ds:'Bucătar italian cu pizza. Rămâne în spatele trupelor și le vindecă din apropiere.'},
+{n:'Tun',an:7,c:3,rr:0,b:1,hp:650,d:60,cd:.7,r:105,s:0,k:1,life:30,pj:'Ghiulea',sk:'#333',cl:'#333',ds:'Tun scoțian pe soclu de piatră. Clădire care trage în trupele de sol și dispare după 30 s.'},
+{n:'Cangurul',an:0,c:3,rr:0,hp:620,d:72,cd:.85,r:16,s:56,k:1,sk:'#b9824a',cl:'#b9824a',ds:'Boxer din Australia cu mănuși roșii. Sare repede în luptă și lovește des.'},
+{n:'Piratul',an:0,c:3,rr:1,hp:540,d:85,cd:1.2,r:16,s:44,k:1,sa:24,sk:'#e0b088',cl:'#7a1f1f',ds:'Pirat cu un ochi acoperit și sabie curbată. Loviturile lui rănesc mai multe trupe deodată.'},
+{n:'Mongolul',an:0,c:4,rr:1,hp:580,d:90,cd:.9,r:16,s:70,k:1,sk:'#f1c9a5',cl:'#2a6a3a',ds:'Călăreț din stepă pe un cal iute. Ajunge primul la turnuri.'},
+{n:'Fachirul',an:3,c:4,rr:2,hp:520,d:75,cd:1.1,r:75,s:46,k:1,ta:1,ar:1,pj:'Scântei',sk:'#d6a87a',cl:'#f2f2f2',ds:'Plutește pe un covor zburător din India. Trece peste râu și aruncă scântei din flaut.'},
+{n:'Sumo',an:10,c:5,rr:1,hp:1400,d:100,cd:1.4,r:18,s:30,k:1,sa:26,sk:'#f0c6a0',cl:'#f0c6a0',ds:'Luptător din Japonia, uriaș și lent. Fiecare lovitură îi împinge și pe cei din jur.'},
+{n:'Cocalarul',an:0,c:3,rr:0,hp:450,d:70,cd:1,r:16,s:60,k:1,sa:26,sk:'#e8b896',cl:'#1a1a22',ds:'Vine în trening, cu lanț de aur și manele la boxă. Muzica tare rănește tot ce e în jur.'},
+{n:'Gospodarul',an:0,c:2,rr:0,hp:340,d:55,cd:1,r:24,s:40,k:1,sk:'#e0b088',cl:'#f2f2f2',ds:'Moș harnic cu pălărie de paie și furcă lungă. Nu se dă bătut când apără ce-i al lui.'},
+{n:'Dictatorul',an:0,c:4,rr:1,hp:1100,d:85,cd:1.3,r:18,s:32,k:1,tb:1,sk:'#e0b088',cl:'#4a5a2a',ds:'General cu ochelari de soare, o sută de medalii și zero interes pentru popor. Ignoră trupele și merge direct la turnuri.'},
+{n:'Candidatul',an:1,c:3,rr:1,hp:380,d:52,cd:.8,r:90,s:38,k:1,ta:1,pj:'Promisiune electorală',sk:'#f1c9a5',cl:'#2a4a8a',ds:'Zâmbește la cameră și aruncă promisiuni de la distanță. Dacă îl prinzi aproape, nu mai ține nicio promisiune.'},
+{n:'Grătaristul',an:5,c:4,rr:1,hp:520,d:45,cd:.5,r:55,s:38,k:1,pj:'Jar și mici',sk:'#e0b088',cl:'#f2f2f2',ds:'Nea Mitică la grătar: mici, bere și foc din plin. Arde tot ce se apropie.'},
+{n:'Găinușa',an:0,c:1,rr:0,hp:100,d:24,cd:.55,r:10,s:80,k:1,sk:'#f7f2e8',cl:'#f7f2e8',ds:'Cea mai ieftină carte. Mică, iute și enervantă: ciugulește fără oprire.'},
+{n:'Țânțarii',an:0,c:2,rr:0,hp:55,d:20,cd:.7,r:10,s:75,k:3,ar:1,sk:'#444',cl:'#444',ds:'Trei țânțari care zboară peste râu. Mici, dar nu te lasă în pace.'},
+{n:'Gardul',an:0,c:2,rr:0,b:1,nat:1,hp:900,d:0,cd:1,r:0,s:0,k:1,life:20,sk:'#a0743a',cl:'#a0743a',ds:'Gard de lemn. Nu atacă, dar trupele pierd vremea să-l dărâme. Dispare după 20 s.'},
+{n:'Cotețul',an:0,c:4,rr:0,b:1,nat:1,spw:25,spt:3.2,hp:640,d:0,cd:1,r:0,s:0,k:1,life:30,sk:'#a8532c',cl:'#a8532c',ds:'Coteț de țară. Scoate o găinușă la fiecare 3 secunde, cât ține 30 s.'},
+{n:'Mortarul',an:4,c:4,rr:1,b:1,hp:560,d:125,cd:2.8,r:185,s:0,k:1,sa:28,life:30,pj:'Bombă',sk:'#33383d',cl:'#33383d',ds:'Clădire cu bătaie foarte lungă. Bombardează trupele de sol, dar nu lovește aerul.'},
+{n:'Paratrăsnetul',an:2,c:4,rr:1,b:1,hp:560,d:85,cd:.9,r:90,s:0,k:1,ta:1,life:35,pj:'Fulger',sk:'#8a8f98',cl:'#8a8f98',ds:'Turn de fier care atrage fulgerele. Lovește și trupele din aer.'},
+{n:'Petardele',an:11,c:2,rr:0,sp:1,sr:36,sd:125,td:60,ds:'Vrajă ieftină de Revelion: un buchet de petarde care pocnește în zonă.'},
+{n:'Țuica',an:15,c:3,rr:1,sp:1,heal:340,sr:55,ds:'Vrajă de vindecare. O țuică bună le dă putere trupelor tale din zonă.'},
+{n:'Înghețul',an:13,c:4,rr:2,sp:1,sr:50,sd:45,td:20,fz:3,ds:'Vrajă: îngheață pe loc trupele și turnurile din zonă timp de 3 secunde.'},
+{n:'Fulgerul',an:14,c:6,rr:2,sp:1,bolt:1,sr:70,sd:650,td:280,ds:'Vrajă scumpă. Lovește cele 3 ținte cu cea mai multă viață din zonă.'},
+{n:'Zeus',an:2,c:6,rr:3,hp:1050,d:200,cd:1.7,r:105,s:34,k:1,ta:1,pj:'Fulger',sk:'#f1c9a5',cl:'#f2f2f2',ds:'Zeul din Olimp, cu barbă albă și fulger în mână. Aruncă trăsnete de foarte departe.'},
+{n:'Elefantul',an:10,c:7,rr:3,hp:3100,d:140,cd:1.8,r:20,s:24,k:1,sa:30,sk:'#8f959c',cl:'#8f959c',ds:'Elefant indian cu pătură roșie. Cel mai scump și mai greu: loviturile lui rănesc tot în jur.'}];
+const $=id=>document.getElementById(id),cv=$('cv');let ctx=cv.getContext('2d');
 const shuf=a=>a.slice().sort(()=>Math.random()-.5);
 cv.width=W*2;cv.height=H*2;ctx.scale(2,2);
-function mkTw(){const a=[];[0,1].forEach(t=>{const y0=t?110:410,yk=t?52:468;[[90,y0],[270,y0],[180,yk]].forEach(([x,y],i)=>a.push({t,x,y,k:i==2,hp:i==2?2400:1400,m:i==2?2400:1400,cd:0}))});return a}
+function mkTw(){const a=[];[0,1].forEach(t=>{const y0=t?110:410,yk=t?52:468;[[90,y0],[270,y0],[180,yk]].forEach(([x,y],i)=>a.push({t,x,y,k:i==2,hp:i==2?2400:1400,m:i==2?2400:1400,cd:0,tg:null}))});return a}
 const LAY=mkTw();
-let deck=[0,1,2,3,4,5,7,9],dk=[];
+let deck=[0,1,2,3,4,5,7,9],dsel=[],dview=-1;
 try{const d=JSON.parse(localStorage.getItem('ad_deck'));if(Array.isArray(d)&&d.length==8&&d.every(i=>C[i]))deck=d}catch(e){}
 let S,V,me=0,flip=false,mode='menu',net=null,hand=[],queue=[],sel=-1,done=false,raf=0,sm={},acc=0,last=0,qTok=0,bot={},rem='bot',ptr=null,dr=null,peers=[],vt=0,lastSend=0;
 
 /* ---------- simulare (host / bot) ---------- */
-function initSim(){S={u:[],tw:mkTw(),e:[5,5],t:120,ev:[],pd:[],id:0,o:null};const b=shuf(C.map((_,i)=>i)).slice(0,8);bot={t:2.5,h:b.slice(0,4),q:b.slice(4)}}
+const BD=[[2,13,8,3,7,9,14,1],[14,0,1,4,10,7,5,11],[6,3,10,12,9,0,1,13],[11,12,1,8,5,14,7,0],[17,15,16,19,1,9,13,14],[18,19,1,16,7,5,14,15],[20,21,23,24,1,9,22,14],[22,24,23,21,20,5,1,14],[36,13,26,25,31,1,29,0],[35,27,28,30,3,25,31,20]];
+function initSim(){S={u:[],tw:mkTw(),e:[5,5],t:120,ev:[],pd:[],id:0,o:null};const b=shuf(BD[Math.random()*BD.length|0]);bot={t:2.2,h:b.slice(0,4),q:b.slice(4),go:6.5+Math.random()*2}}
+/* zone de plasare: jumătatea ta + "buzunarul" din culoarul în care ai dărâmat turnul inamic (până la locul turnului) */
+function zones(t,hp){
+  const z=[t==0?[0,RY+15,W,H-RY-15]:[0,0,W,RY-15]];
+  for(let l=0;l<2;l++){const i=(t==0?3:0)+l;
+    if(hp(i)<=0){const ty=LAY[i].y,x0=l*W/2;z.push(t==0?[x0,ty,W/2,RY-15-ty]:[x0,RY+15,W/2,ty-RY-15])}}
+  return z}
+function canPut(t,x,y,hp){return zones(t,hp).some(([a,b,w,h])=>x>=a&&x<=a+w&&y>=b&&y<=b+h)}
+/* turnul propriu viu cel mai apropiat de țintă: de acolo pornește vraja */
+function src(t,x,y){let b=null,bd=1e9;for(const w of S.tw){if(w.t!=t||w.hp<=0)continue;const d=Math.hypot(w.x-x,w.y-y);if(d<bd){bd=d;b=w}}return b?{x:b.x,y:b.y}:{x:W/2,y:t?52:468}}
 function deploy(t,c,x,y){
   const D=C[c];if(!D||S.o!=null||!(x>=0&&x<=W&&y>=0&&y<=H)||S.e[t]<D.c)return false;
-  if(D.sp){S.e[t]-=D.c;S.ev.push([D.an,x|0,y|0,x|0,y|0,0,D.sr,t]);S.pd.push([.4,x,y,t,c]);return true}
-  if(t==0?y<RY+15:y>RY-15)return false;
+  if(D.sp){const o=src(t,x,y),fl=D.bolt?0.4:ft([D.an,o.x|0,o.y|0,x|0,y|0]);S.e[t]-=D.c;if(!D.bolt)S.ev.push([D.an,o.x|0,o.y|0,x|0,y|0,0,D.sr,t]);S.pd.push([fl,x,y,t,c]);return true}
+  if(!canPut(t,x,y,i=>S.tw[i].hp))return false;
   S.e[t]-=D.c;
-  for(let i=0;i<D.k;i++)S.u.push({id:++S.id,c,t,x:x+(i-(D.k-1)/2)*12,y:y+(i%2)*6,hp:D.hp,cd:.5});
+  for(let i=0;i<D.k;i++)S.u.push({id:++S.id,c,t,x:x+(i-(D.k-1)/2)*12,y:y+(i%2)*6,hp:D.hp,cd:.5,tg:null,lk:0,br:null,fl:null});
   return true}
 function side(y){return y>RY?0:1}
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+/* cel mai apropiat inamic vizabil în raza de aggro */
+function nearFoe(u,D){let tg=null,bd=Math.max(85,D.r);
+  for(const o of S.u){if(o.t==u.t||o.hp<=0)continue;const OD=C[o.c];if((D.tb&&!OD.b)||(OD.ar&&!D.ta))continue;const d=dist(o,u);if(d<bd){bd=d;tg=o}}
+  return tg}
+function nearTw(u){let tg=null,bd=1e9;for(const w of S.tw){if(w.t==u.t||w.hp<=0)continue;const d=dist(w,u);if(d<bd){bd=d;tg=w}}return tg}
+/* țintă blocată: o trupă/turn ales nu se mai schimbă până moare sau iese din raza de urmărire */
+function aim(u,D){
+  let tg=u.tg,keep=false;
+  if(tg&&tg.hp>0){
+    if(tg.m!==undefined)keep=!!u.lk||!nearFoe(u,D);
+    else keep=dist(tg,u)<=(u.lk?Math.max(130,D.r+60):Math.max(85,D.r)+25)}
+  if(!keep){tg=nearFoe(u,D)||(D.b?null:nearTw(u));u.lk=0}
+  u.tg=tg;return tg}
+function walk(u,D,px,py,dt){
+  let gx=px,gy=py;
+  if(!D.ar){
+    const s=side(u.y),ts=side(py),band=Math.abs(u.y-RY)<=14;
+    if(s!=ts||band){
+      if(u.br==null)u.br=Math.abs(u.x-90)<Math.abs(u.x-270)?90:270;
+      gx=u.br;gy=(!band&&Math.abs(u.x-gx)>10)?RY+(s==0?24:-24):RY+(ts==0?24:-24)}
+    else u.br=null}
+  const dx=gx-u.x,dy=gy-u.y,l=Math.hypot(dx,dy);if(l<.5)return;
+  const st=Math.min(D.s*dt,l);u.x+=dx/l*st;u.y+=dy/l*st}
+function hit(u,D,tg){
+  u.cd=D.cd;tg.hp-=D.d;S.ev.push([D.an,u.x|0,u.y|0,tg.x|0,tg.y|0,0,D.sa||(D.an==10?30:20),u.t]);
+  if(D.sa)for(const o of S.u)if(o.t!=u.t&&o!==tg&&o.hp>0&&dist(o,tg)<D.sa&&(!C[o.c].ar||D.ta))o.hp-=D.d}
+function spawnFrom(u,D){const E=C[D.spw];S.u.push({id:++S.id,c:D.spw,t:u.t,x:u.x+Math.random()*16-8,y:u.y+(u.t==0?-14:14),hp:E.hp,cd:.5,tg:null,lk:0,br:null,fl:null})}
+function heal(u,D,dt){u.hc=(u.hc||0)-dt;let n=0;
+  for(const o of S.u){if(o.t!=u.t||o===u||o.hp<=0||C[o.c].b||dist(o,u)>=70)continue;const m=C[o.c].hp;
+    if(o.hp<m){o.hp=Math.min(m,o.hp+D.hl*dt);if(u.hc<=0&&n++<2)S.ev.push([6,u.x|0,u.y|0,o.x|0,o.y|0,0,1,u.t])}}
+  if(u.hc<=0)u.hc=.7}
+/* suport (vindecător): urmărește o trupă aliată și rămâne în spatele ei, nu înaintează singur */
+function support(u,D,dt){
+  let tg=null,bd=1e9;
+  for(const o of S.u){if(o.t==u.t||o.hp<=0||(C[o.c].ar&&!D.ta))continue;const d=dist(o,u);if(d<=D.r+6&&d<bd){bd=d;tg=o}}
+  if(!tg)for(const w of S.tw){if(w.t==u.t||w.hp<=0)continue;const d=dist(w,u);if(d<=D.r+20&&d<bd){bd=d;tg=w}}
+  if(tg&&u.cd<=0)hit(u,D,tg);
+  let L=u.fl;
+  if(!(L&&L.hp>0&&dist(L,u)<300)){L=null;let bs=280;
+    for(const o of S.u){if(o.t!=u.t||o===u||o.hp<=0)continue;const OD=C[o.c];if(OD.sup||OD.b||OD.ar||!OD.s)continue;
+      const sc=dist(o,u)-Math.min(o.hp,1500)/15;if(dist(o,u)<280&&sc<bs){bs=sc;L=o}}
+    u.fl=L}
+  let gx,gy;
+  if(L){gx=L.x;gy=L.y+(u.t==0?1:-1)*28}
+  else{const ry=u.t==0?RY+75:RY-75;if(!(u.t==0?u.y<ry-15:u.y>ry+15))return;gx=u.x;gy=ry}
+  if(Math.hypot(gx-u.x,gy-u.y)>5)walk(u,D,gx,gy,dt)}
 function step(dt){
   if(S.o!=null)return;
   S.t-=dt;for(const t of[0,1])S.e[t]=Math.min(10,S.e[t]+dt/2.4);
   S.ev=S.ev.filter(e=>(e[5]+=dt)<ft(e)+TOT[e[0]]);
   S.pd=S.pd.filter(q=>{if((q[0]-=dt)>0)return true;const D=C[q[4]],x=q[1],y=q[2],t=q[3];
-    for(const o of S.u)if(o.t!=t&&Math.hypot(o.x-x,o.y-y)<D.sr)o.hp-=D.sd;
-    for(const w of S.tw)if(w.t!=t&&w.hp>0&&Math.hypot(w.x-x,w.y-y)<D.sr+5)w.hp-=D.td;return false});
+    if(D.heal){for(const o of S.u)if(o.t==t&&o.hp>0&&!C[o.c].b&&Math.hypot(o.x-x,o.y-y)<D.sr)o.hp=Math.min(C[o.c].hp,o.hp+D.heal);return false}
+    if(D.bolt){const L=[];for(const o of S.u)if(o.t!=t&&o.hp>0&&Math.hypot(o.x-x,o.y-y)<D.sr)L.push(o);for(const w of S.tw)if(w.t!=t&&w.hp>0&&Math.hypot(w.x-x,w.y-y)<D.sr+5)L.push(w);
+      L.sort((a,b)=>b.hp-a.hp);for(const o of L.slice(0,3)){o.hp-=o.m!==undefined?D.td:D.sd;S.ev.push([14,o.x|0,(o.y-200)|0,o.x|0,o.y|0,0,20,t])}return false}
+    for(const o of S.u)if(o.t!=t&&o.hp>0&&Math.hypot(o.x-x,o.y-y)<D.sr){o.hp-=D.sd;if(D.fz)o.fz=D.fz}
+    for(const w of S.tw)if(w.t!=t&&w.hp>0&&Math.hypot(w.x-x,w.y-y)<D.sr+5){w.hp-=D.td;if(D.fz)w.fz=D.fz}return false});
   if(mode=='bot')botAI(dt);
   for(const u of S.u){
-    const D=C[u.c];u.cd-=dt;let tg=null,bd=1e9;
-    if(D.life)u.hp-=D.hp/D.life*dt;
-    if(D.hl){u.hc=(u.hc||0)-dt;let n=0;for(const o of S.u)if(o.t==u.t&&o!==u&&Math.hypot(o.x-u.x,o.y-u.y)<70){const m=C[o.c].hp;if(o.hp<m){o.hp=Math.min(m,o.hp+D.hl*dt);if(u.hc<=0&&n++<2)S.ev.push([6,u.x|0,u.y|0,o.x|0,o.y|0,0,1,u.t])}}if(u.hc<=0)u.hc=.7}
-    for(const o of S.u){const OD=C[o.c];if(o.t==u.t||(D.tb&&!OD.b)||(OD.ar&&!D.ta))continue;const d=Math.hypot(o.x-u.x,o.y-u.y);if(d<bd&&d<Math.max(85,D.r)){bd=d;tg=o}}
-    if(!tg)for(const w of S.tw){if(w.t==u.t||w.hp<=0)continue;const d=Math.hypot(w.x-u.x,w.y-u.y);if(d<bd){bd=d;tg=w}}
-    if(!tg)continue;
-    const isT=tg.m!==undefined,d=Math.hypot(tg.x-u.x,tg.y-u.y);
-    if(d<=D.r+(isT?20:6)){
-      if(u.cd<=0){u.cd=D.cd;tg.hp-=D.d;S.ev.push([D.an,u.x|0,u.y|0,tg.x|0,tg.y|0,0,D.sa||(D.an==10?30:20),u.t]);if(D.sa)for(const o of S.u)if(o.t!=u.t&&o!==tg&&Math.hypot(o.x-tg.x,o.y-tg.y)<D.sa&&(!C[o.c].ar||D.ta))o.hp-=D.d}
-    }else if(D.s){
-      let px=tg.x,py=tg.y;const s=side(u.y),ts=side(tg.y),band=Math.abs(u.y-RY)<=14;
-      if(!D.ar&&(s!=ts||band)){
-        const bx=Math.abs(u.x-90)<Math.abs(u.x-270)?90:270;
-        if(!band&&Math.abs(u.x-bx)>10){px=bx;py=RY+(s==0?24:-24)}else{px=bx;py=RY+(ts==0?24:-24)}
-      }
-      const dx=px-u.x,dy=py-u.y,l=Math.hypot(dx,dy)||1;
-      u.x+=dx/l*D.s*dt;u.y+=dy/l*D.s*dt}
-  }
+    const D=C[u.c];u.cd-=dt;
+    if(D.life)u.hp-=D.hp/D.life*dt;if(u.fz>0){u.fz-=dt;continue}
+    if(D.hl)heal(u,D,dt);if(D.spw){u.sc=(u.sc==null?D.spt:u.sc)-dt;if(u.sc<=0){u.sc=D.spt;spawnFrom(u,D)}}if(D.nat)continue;
+    if(D.sup){support(u,D,dt);continue}
+    const tg=aim(u,D);if(!tg)continue;
+    const isT=tg.m!==undefined,d=dist(tg,u);
+    if(d<=D.r+(isT?20:6)){if(u.cd<=0){hit(u,D,tg);u.lk=1}}
+    else if(D.s)walk(u,D,tg.x,tg.y,dt)}
   for(const a of S.u)for(const b of S.u){if(a===b||!C[a.c].s)continue;const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
     if(d<11&&d>0){a.x+=dx/d*(11-d)*.3;a.y+=dy/d*(11-d)*.3}}
   for(const u of S.u)u.x=Math.max(8,Math.min(W-8,u.x));
   for(const w of S.tw){
-    if(w.hp<=0)continue;w.cd-=dt;if(w.cd>0)continue;
-    let tg=null,bd=w.k?110:125;
-    for(const o of S.u){if(o.t==w.t)continue;const d=Math.hypot(o.x-w.x,o.y-w.y);if(d<bd){bd=d;tg=o}}
-    if(tg){w.cd=.9;tg.hp-=w.k?75:65;S.ev.push([w.k?7:1,w.x|0,w.y|0,tg.x|0,tg.y|0,0,20,w.t])}
-  }
+    if(w.hp<=0||S.pv)continue;if(w.fz>0){w.fz-=dt;continue}w.cd-=dt;
+    const R=w.k?110:125;let tg=w.tg;
+    if(!(tg&&tg.hp>0&&dist(tg,w)<=R)){tg=null;let bd=R;for(const o of S.u){if(o.t==w.t||o.hp<=0)continue;const d=dist(o,w);if(d<bd){bd=d;tg=o}}w.tg=tg}
+    if(w.cd>0||!tg)continue;
+    w.cd=.9;tg.hp-=w.k?75:65;S.ev.push([w.k?7:1,w.x|0,w.y|0,tg.x|0,tg.y|0,0,20,w.t])}
   S.u=S.u.filter(u=>u.hp>0);
   if(S.tw[2].hp<=0)S.o=1;else if(S.tw[5].hp<=0)S.o=0;
   else if(S.t<=0){S.t=0;const c0=S.tw.slice(3).filter(w=>w.hp<=0).length,c1=S.tw.slice(0,3).filter(w=>w.hp<=0).length;S.o=c0>c1?0:c1>c0?1:2}
 }
-function bplay(c,x,y){if(!deploy(1,c,Math.max(12,Math.min(W-12,x)),y))return false;
+
+/* ---------- bot: apără după matchup, împinge cu tanc + suport, folosește vrăji pe grupuri ---------- */
+const dpsU=D=>D.d/D.cd;
+const role=c=>{const D=C[c];return D.sp?'sp':D.b?'bl':D.hl?'hl':D.tb?'tk':D.r>50?'rg':D.k>1?'sw':'ml'};
+function bplay(c,x,y){const D=C[c];x=Math.max(12,Math.min(W-12,x));if(!D.sp){y=Math.max(14,y);if(!canPut(1,x,y,i=>S.tw[i].hp))y=Math.min(y,RY-20)}
+  if(!deploy(1,c,x,y))return false;
   const i=bot.h.indexOf(c);bot.h[i]=bot.q.shift();bot.q.push(c);return true}
+function spellBest(c,foe){const D=C[c];let b=null;
+  const g=(x,y)=>{let s=0;for(const o of foe)if(Math.hypot(o.x-x,o.y-y)<D.sr){const OD=C[o.c],v=OD.c/OD.k;s+=o.hp<=D.sd?v:v*.5*D.sd/OD.hp}
+    for(const w of S.tw)if(w.t==0&&w.hp>0&&Math.hypot(w.x-x,w.y-y)<D.sr+5)s+=D.td/470+(w.hp<=D.td?2:0);return s};
+  for(const o of foe){const s=g(o.x,o.y);if(!b||s>b.g)b={g:s,x:o.x,y:o.y}}
+  for(const w of S.tw)if(w.t==0&&w.hp>0&&w.hp<=D.td){const s=g(w.x,w.y);if(!b||s>b.g)b={g:s,x:w.x,y:w.y}}
+  return b}
 function botAI(dt){
-  bot.t-=dt;if(bot.t>0)return;bot.t=1.2+Math.random()*1.8;
-  const opts=bot.h.filter(c=>C[c].c<=S.e[1]);if(!opts.length)return;
-  const foe=S.u.filter(u=>u.t==0);let c=opts[Math.random()*opts.length|0],x,y;
-  if(C[c].sp){let b=null,n=1;
-    for(const u of foe){const m=foe.filter(o=>Math.hypot(o.x-u.x,o.y-u.y)<C[c].sr).length;if(m>n){n=m;b=u}}
-    if(b){bplay(c,b.x,b.y);return}
-    const np=opts.filter(k=>!C[k].sp);if(!np.length)return;c=np[Math.random()*np.length|0]}
-  const th=foe.filter(u=>u.y<RY+30);
-  if(th.length){const u=th[0];x=u.x+Math.random()*30-15;y=Math.min(RY-25,Math.max(70,u.y-35))}
-  else{x=BR[Math.random()<.5?0:1]+Math.random()*50-25;y=C[c].r>50?150:C[c].tb?110:200}
-  bplay(c,x,y)}
-const TOT={0:.28,1:.12,2:.1,3:.35,4:.38,5:.4,6:.35,7:.35,8:.38,10:.4,11:.45,12:.3};
-function ft(e){const k=e[0],d=Math.hypot(e[3]-e[1],e[4]-e[2]);return k==1?Math.max(.1,d/320):k==2?.07:k==3?Math.max(.15,d/230):k==4?Math.max(.25,d/200):k==7?Math.max(.15,d/380):k==8?.3:k>10?.4:0}
+  bot.t-=dt;if(bot.t>0)return;bot.t=.4+Math.random()*.4;
+  const e=S.e[1],aff=bot.h.filter(c=>C[c].c<=e);if(!aff.length)return;
+  const foe=S.u.filter(u=>u.t==0&&u.hp>0),own=S.u.filter(u=>u.t==1&&u.hp>0);
+  for(const c of aff)if(C[c].sp){const b=spellBest(c,foe);if(b&&b.g>=C[c].c+.8&&bplay(c,b.x,b.y)){bot.t=.9;return}}
+  const th=foe.filter(u=>u.y<RY+30&&!C[u.c].b);
+  if(th.length){const r=defend(th,aff,own);if(r==1||(r==2&&e<9.5))return}
+  attack(aff,own,foe,e)}
+/* 1 = a jucat o carte, 2 = așteaptă (deja acoperit / nu a trecut râul), 0 = nimic */
+function defend(th,aff,own){
+  th.sort((a,b)=>a.y-b.y);const d0=th[0],g=th.filter(u=>Math.hypot(u.x-d0.x,u.y-d0.y)<110);
+  let H=0,Dt=0,val=0,air=false,cx=0,cy=0;
+  for(const u of g){const D=C[u.c];H+=u.hp;Dt+=dpsU(D);val+=D.c/D.k;air=air||!!D.ar;cx+=u.x;cy+=u.y}
+  cx/=g.length;cy/=g.length;Dt=Math.max(30,Dt);
+  if(d0.y>RY-6&&!(val>=4&&d0.y<RY+22))return 2;
+  let od=0,oh=0;for(const o of own){const OD=C[o.c];if(OD.sup||Math.hypot(o.x-cx,o.y-cy)>130)continue;od+=dpsU(OD);oh+=o.hp}
+  const mk=(a,h)=>(a+od+60)*(h+oh+300)/(H*Dt);
+  if(mk(0,0)>=1.2)return 2;
+  const L=[];
+  for(const c of aff){const D=C[c],r=role(c);if(r=='sp'||r=='hl'||D.nat||(air&&!D.ta))continue;
+    let k=mk(dpsU(D)*D.k,D.hp*D.k);if(r=='tk')k*=.5;L.push({c,k})}
+  if(!L.length)return 2;
+  const ok=L.filter(a=>a.k>=.9);let p;
+  if(ok.length){ok.sort((a,b)=>C[a.c].c-C[b.c].c||b.k-a.k);p=Math.random()<.2&&ok[1]?ok[1]:ok[0]}
+  else{L.sort((a,b)=>b.k-a.k);p=L[0];if(p.k<.35||(d0.y>RY-70&&val<3))return 2}
+  const r=role(p.c),tx=d0.x<180?90:270;let x=d0.x+Math.random()*14-7,y;
+  if(r=='rg'){x=tx+Math.random()*30-15;y=95}
+  else if(r=='bl')y=Math.max(125,d0.y-60);
+  else y=Math.max(75,Math.min(RY-22,d0.y-38));
+  return bplay(p.c,x,y)?1:2}
+function attack(aff,own,foe,e){
+  const mine=own.filter(u=>!C[u.c].b&&u.y>30&&u.y<RY+70);
+  const tk=mine.filter(u=>{const D=C[u.c];return !D.hl&&(D.tb||D.hp*D.k>=700)}).sort((a,b)=>b.y-a.y)[0];
+  if(tk){
+    const near=mine.filter(u=>u!==tk&&dist(u,tk)<70),hasH=near.some(u=>C[u.c].hl);
+    if(near.length<2){const pri={hl:0,rg:1,sw:2,ml:3};
+      const L=aff.filter(c=>pri[role(c)]!=null&&!(hasH&&role(c)=='hl')).sort((a,b)=>pri[role(a)]-pri[role(b)]);
+      if(L.length&&e>=3&&bplay(L[0],tk.x+Math.random()*10-5,tk.y-30)){bot.t=.7+Math.random()*.5;return}}
+    if(e<9.5)return}
+  if(e<bot.go&&e<9.5)return;
+  const ln=[0,1].map(i=>S.tw[i].hp+foe.filter(u=>(u.x<180?0:1)==i).length*250+Math.random()*350);
+  const li=ln[0]<=ln[1]?0:1,bx=BR[li]+Math.random()*16-8;
+  let L=aff.filter(c=>{const r=role(c),D=C[c];return r=='tk'||(r=='ml'&&D.hp>=600)||(r=='sw'&&D.c>=5)}),y=S.tw[li].hp<=0?RY+55:70;
+  if(!L.length){
+    L=aff.filter(c=>!C[c].sp&&role(c)!='hl');if(e<9.5||!L.length)return;
+    L.sort((a,b)=>C[a].c-C[b].c);y=role(L[0])=='bl'?RY-75:RY-40}
+  const c=L[Math.random()*L.length|0];
+  if(bplay(c,bx,y)){bot.go=6.5+Math.random()*2.5;bot.t=.8+Math.random()*.5}}
+const TOT={0:.28,1:.12,2:.1,3:.35,4:.38,5:.4,6:.35,7:.35,8:.38,10:.4,11:.45,12:.3,13:.7,14:.35,15:.7};
+function ft(e){const k=e[0],d=Math.hypot(e[3]-e[1],e[4]-e[2]);return k==1?Math.max(.1,d/320):k==2?.07:k==3?Math.max(.15,d/230):k==4?Math.max(.25,d/200):k==7?Math.max(.15,d/380):k==8?.3:(k>10&&k<14)||k==15?Math.max(.3,Math.min(.6,d/700)):0}
 function snap(){return{t:Math.ceil(S.t),e:S.e.map(x=>+x.toFixed(1)),
-  w:S.tw.map(w=>[Math.max(0,w.hp|0)]),
-  u:S.u.map(u=>[u.id,u.c,u.t,+u.x.toFixed(1),+u.y.toFixed(1),u.hp|0]),
+  w:S.tw.map(w=>[Math.max(0,Math.ceil(w.hp))]),
+  u:S.u.map(u=>[u.id,u.c,u.t,+u.x.toFixed(1),+u.y.toFixed(1),u.hp|0,u.fz>0?1:0]),
   a:S.ev.map(e=>e.map((v,i)=>i==5?+v.toFixed(2):v)),o:S.o}}
 
 /* ---------- modele desenate ---------- */
 function mdl(g,c,x,y,z,t,k){
-  const D=C[c],b=Math.sin(k*9),hy=-7+b,w=c==2?10:6.5,bh=c==2?9:7.5;
+  const D=C[c],b=Math.sin(k*9),hy=-7+b,w=c==2?10:c==19?9:6.5,bh=c==2?9:c==19?8.5:7.5;
   g.save();g.translate(x,y);g.scale(z,z);g.lineCap='round';
   const R=(a,q,ww,h,f)=>{g.fillStyle=f;g.fillRect(a,q,ww,h)},
   O=(a,q,r,f)=>{g.fillStyle=f;g.beginPath();g.arc(a,q,r,0,7);g.fill()},
@@ -187,12 +319,16 @@ function mdl(g,c,x,y,z,t,k){
   B=fn=>{g.save();g.beginPath();g.ellipse(0,2+b/2,w,bh,0,0,7);g.clip();fn();g.restore()};
   if(D.sp){
     if(c==5){O(0,0,11,'#ff5a14');O(0,-2,7.5,'#ffa31a');O(0,-4,4,'#fff3b0');for(let i=0;i<5;i++)O(Math.cos(i*1.3)*9,Math.sin(i*1.3)*9-3,3,'#ff7a22')}
+    else if(c==31){for(let i=0;i<4;i++){const a=i*1.6+.4,px=Math.cos(a)*7,py=Math.sin(a)*7;R(px-2,py-3,4,7,'#e63a2a');L(px,py-3,px+1,py-7,'#ffd24a',1.2)}}
+    else if(c==32){R(-4,-3,8,11,'#7a3a9a');R(-2,-9,4,6,'#7a3a9a');R(-2.5,-11,5,2.5,'#c89a5a');R(-3,1,6,4,'#f2f2f2');L(0,1.5,0,4.5,'#2e9e4f',1.4);L(-1.5,3,1.5,3,'#2e9e4f',1.4)}
+    else if(c==33){for(let i=0;i<3;i++){const a=i*1.0472;L(Math.cos(a)*11,Math.sin(a)*11,-Math.cos(a)*11,-Math.sin(a)*11,'#bfeaff',2.2)}O(0,0,3,'#fff')}
+    else if(c==34){g.fillStyle='#ffe14a';g.beginPath();g.moveTo(3,-12);g.lineTo(-6,2);g.lineTo(-1,2);g.lineTo(-4,12);g.lineTo(7,-3);g.lineTo(1,-3);g.closePath();g.fill()}
     else for(let i=-1;i<2;i++){L(i*8-3,-10,i*8+3,10,'#e8dcc0',2.2);O(i*8+3,10,2.6,'#fff')}
     g.restore();return}
   E(0,10,9,3,'#0004');
   if(t>=0){g.strokeStyle=t?'#ff5a4f':'#4aa3f0';g.lineWidth=2;g.beginPath();g.ellipse(0,10,10,4,0,0,7);g.stroke()}
   if(c==14){
-    for(const sx of[-7,7]){O(sx,6,4.5,'#b5282e');O(sx,6,2,'#1e6b3a')}
+    R(-12,3,24,8,'#8a8f98');R(-12,3,24,2,'#aab0b8');for(let i=0;i<4;i++)R(-8+i*5.5,5,.8,6,'#6a7078');
     R(-10,0,20,5,'#6a4a2a');g.save();g.rotate(-.3);R(-3,-6,17,8,'#33383d');R(12,-7,4,10,'#22272b');g.restore();
     L(-8,0,-8,-13,'#ccc',1);R(-8,-13,8,5,'#2a6fd6');L(-8,-13,0,-8,'#fff',1);L(0,-13,-8,-8,'#fff',1);g.restore();return}
   if(c==11){
@@ -202,9 +338,25 @@ function mdl(g,c,x,y,z,t,k){
   if(c==12){
     g.translate(0,b);E(0,-4,16,8,'#222');g.save();g.beginPath();g.ellipse(0,-4,16,8,0,0,7);g.clip();R(-16,-7,32,4,'#d22');R(-16,-3,32,4,'#f6c343');g.restore();
     R(-5,5,10,4,'#5a3a1a');L(-14,-4,-19,-10,'#222',3);L(-14,-4,-19,2,'#222',3);O(16,-4,2,'#ccc');g.restore();return}
+  if(c==15){L(-8,3,-14,10,'#b9824a',4);E(0,2,7,9,'#b9824a');E(0,4,4,5,'#e3c08e');O(0,hy-1,4.6,'#b9824a');L(-2.5,hy-4,-3.5,hy-10,'#b9824a',2.4);L(2.5,hy-4,3.5,hy-10,'#b9824a',2.4);R(-2.2,hy-1,1.4,1.5,'#111');R(.9,hy-1,1.4,1.5,'#111');O(-8,b*2,3.6,'#d22');O(8,-b*2,3.6,'#d22');g.restore();return}
+  if(c==17){E(-2,3,11,5.5,'#7a4a2a');L(8,0,13,-6,'#7a4a2a',4);O(14,-7,3.2,'#7a4a2a');L(-12,2,-15,7,'#2a1a10',1.5);
+    for(const lx of[-7,-2,4,9])L(lx,6,lx+(lx%2?b:-b),10,'#5a3a1e',2);
+    E(-1,-3,3.5,5,'#2a6a3a');O(-1,-9,3.8,'#f1c9a5');R(-4,-13,6,3,'#8a2a18');L(2,-5,9,-12,'#ccc',1.6);g.restore();return}
+  if(c==18){g.translate(0,b*.8);E(0,3,13,4,'#8a1f4a');R(-11,2.4,22,1.4,'#f6c343');E(0,-1,4.5,5,'#f2f2f2');O(0,-9,4.4,'#d6a87a');
+    E(0,-12,5.2,3.4,'#1fa84a');R(-1,-16,2,3,'#f6c343');R(-2.4,-9.8,1.3,1.5,'#111');R(1.1,-9.8,1.3,1.5,'#111');L(4,-2,11,-6,'#d9a441',2);O(11,-6.5,1.6,'#ff9d2e');g.restore();return}
+  if(c==25){E(0,3,6,5,'#f7f2e8');O(5,-3,3.2,'#f7f2e8');R(4.5,-8,2,2.5,'#d22');L(8,-3,11,-2,'#f6a21a',1.6);R(6,-4,1.2,1.2,'#111');L(-3,7,-3,10+b,'#f6a21a',1.2);L(2,7,2,10-b,'#f6a21a',1.2);E(-6,1,3,2,'#e8dcc0');g.restore();return}
+  if(c==26){O(0,0,2.4,'#444');E(-3,-3+b,4,1.8,'#ccd');E(3,-3-b,4,1.8,'#ccd');L(2,1,6,3,'#333',.9);L(-1,2,-2,6,'#333',.8);g.restore();return}
+  if(c==27){for(let i=-2;i<3;i++){R(i*4-1.2,-5,2.4,13,'#a0743a');R(i*4-1.2,-6,2.4,2,'#7a5a2a')}R(-11,-1,22,2,'#7a5a2a');R(-11,4,22,2,'#7a5a2a');g.restore();return}
+  if(c==28){R(-10,0,20,10,'#a8532c');g.fillStyle='#6a2a1a';g.beginPath();g.moveTo(-12,0);g.lineTo(0,-10);g.lineTo(12,0);g.fill();R(-3,3,6,7,'#2a1a10');O(0,-3,1.6,'#f2f2f2');g.restore();return}
+  if(c==29){R(-10,4,20,6,'#8a8f98');R(-10,4,20,1.5,'#aab0b8');g.save();g.rotate(-.5);R(-4,-9,9,13,'#33383d');R(-5,-10,11,3,'#22272b');g.restore();O(-6,2,2,'#c89a5a');g.restore();return}
+  if(c==30){R(-8,6,16,4,'#6a7078');L(-5,6,-1.5,-9,'#8a8f98',2.2);L(5,6,1.5,-9,'#8a8f98',2.2);L(-3.5,0,3.5,0,'#8a8f98',1.4);L(0,-9,0,-14,'#bbb',1.4);O(0,-15,3,'#ffe14a');O(0,-15,1.4,'#fff');g.restore();return}
+  if(c==36){E(0,3,12,9,'#8f959c');E(-10,-3+b*.5,5.5,7,'#7a8087');E(10,-3-b*.5,5.5,7,'#7a8087');O(0,-3,7,'#8f959c');L(0,-1,0,8,'#8f959c',4.4);L(-3,2,-5,7,'#f2f2f2',1.7);L(3,2,5,7,'#f2f2f2',1.7);R(-3.2,-6,1.8,1.8,'#111');R(1.4,-6,1.8,1.8,'#111');R(-8,-12,16,3,'#c8202f');R(-8,-12,16,1,'#f6c343');g.restore();return}
   E(0,2+b/2,w,bh,D.cl);
   if(c==2)B(()=>{R(-10,-1,20,2,'#fff');R(-10,3,20,2,'#d33');R(-10,7,20,2,'#fff')});
   if(c==7)B(()=>{for(let i=0;i<4;i++)R(-8,-5+i*3.5,16,1,'#a89f80')});
+  if(c==16)B(()=>{for(let i=0;i<4;i++)R(-8,-4+i*3.5,16,1.3,'#f2f2f2')});
+  if(c==20)B(()=>{R(-8,-3,16,1.3,'#fff');R(-8,0,16,1.3,'#fff')});
+  if(c==24)B(()=>{for(let i=-2;i<3;i++)R(i*3-.6,-1,1.2,9,'#c33')});
   O(0,hy,c==2?6.5:5,D.sk);
   R(-2.8,hy-1,1.5,1.7,'#111');R(1.3,hy-1,1.5,1.7,'#111');R(-1.5,hy+2,3,1,'#7a3b2e');
   switch(c){
@@ -223,9 +375,17 @@ function mdl(g,c,x,y,z,t,k){
   case 10:O(0,hy,5.3,'#15151c');R(-4,hy-1.5,8,2.8,D.sk);R(-2.6,hy-.8,1.4,1.2,'#111');R(1.2,hy-.8,1.4,1.2,'#111');
     R(-5,hy-3.8,10,1.6,'#d22');L(5,hy-3,9,hy-1,'#d22',1.5);L(-8,-6,-8,9,'#ccc',1.6);O(9,3,3.2,'#333');L(9,0,10,-3,'#ff9d2e',1);break;
   case 13:R(-4.5,hy-10,9,6,'#fff');E(0,hy-10,5.5,2.8,'#fff');R(-4,hy+1.2,8,1.6,'#222');R(-4,0,8,8,'#fff');R(-1.3,0,2.6,8,'#2e9e4f');
-    O(9,2,4.2,'#f2b84b');O(9,2,3,'#d83a2a');O(8,1,.9,'#6a1a10');O(10,3,.9,'#6a1a10');break}
+    O(9,2,4.2,'#f2b84b');O(9,2,3,'#d83a2a');O(8,1,.9,'#6a1a10');O(10,3,.9,'#6a1a10');break;
+  case 16:g.fillStyle='#111';g.beginPath();g.moveTo(-7,hy-2);g.lineTo(0,hy-9);g.lineTo(7,hy-2);g.fill();R(-7,hy-3,14,1.6,'#111');O(0,hy-5.5,1.2,'#fff');R(1,hy-1.8,3.4,2.6,'#111');L(-1,hy-3,4,hy+1,'#111',.8);L(9,-1,14,-9,'#d9dde2',2);R(7,-1,4,1.6,'#f6c343');break;
+  case 19:R(-6.5,3,13,3,'#2a3a8a');O(-9,0,2.6,D.sk);O(9,0,2.6,D.sk);E(0,hy-3.5,5,2,'#111');O(0,hy-6.5,2,'#111');O(-3,hy+1,1.2,'#e88');O(3,hy+1,1.2,'#e88');break;
+  case 20:R(-4.5,hy-6.5,9,2.8,'#111');R(-4.8,hy-1.6,9.6,2.4,'#111');for(let i=-2;i<3;i++)O(i*1.8,1.5+Math.abs(i)*.5,1,'#f6c343');O(0,4.5,1.8,'#f6c343');R(6,-1,6,5,'#555');O(7.8,1.5,1.1,'#ccc');O(10.2,1.5,1.1,'#ccc');R(7,-3,4,1,'#999');break;
+  case 21:E(0,hy-3,8,2,'#e0c060');E(0,hy-5,4.2,2.4,'#e0c060');R(-3.5,hy+1.2,7,1.3,'#eee');R(-4,0,8,7,'#6a4a2a');L(8,-8,8,10,'#7a5a2a',1.8);L(6,-8,10,-8,'#aaa',1.2);L(6,-8,6,-11,'#aaa',1.2);L(8,-8,8,-11,'#aaa',1.2);L(10,-8,10,-11,'#aaa',1.2);break;
+  case 22:R(-8,-3,4,2,'#f6c343');R(4,-3,4,2,'#f6c343');L(-5,-3,5,6,'#d4202a',2);O(-3,1,1,'#f6c343');O(0,2,1,'#f6c343');O(3,1,1,'#f6c343');R(-6,hy-11,12,7,'#3a4a24');R(-6,hy-5,12,1.6,'#f6c343');O(0,hy-8,1.5,'#f6c343');E(0,hy-3.6,7,1.5,'#111');R(-4.8,hy-1.6,9.6,2.4,'#111');break;
+  case 23:R(-1,0,2,6,'#d22');E(0,hy-4.2,5.6,2.4,'#6a3a1a');R(-3,hy+2.4,6,1.6,'#fff');L(8,3,10,-4,'#222',1.6);O(10,-5,1.6,'#888');break;
+  case 35:E(0,hy-3,5.4,2.6,'#f2f2f2');E(0,hy+3.5,4.2,3,'#f2f2f2');R(-4,hy-4.4,8,1,'#f6c343');g.fillStyle='#ffe14a';g.beginPath();g.moveTo(11,-12);g.lineTo(7,-4);g.lineTo(10,-4);g.lineTo(8,3);g.lineTo(13,-6);g.lineTo(10,-6);g.fill();break;
+  case 24:E(0,hy-3.6,5.6,1.6,'#c33');R(-4,hy+1,8,1.5,'#222');L(5,0,9,-3,'#bbb',1.2);R(7,2,9,3,'#333');L(7,2,16,2,'#999',1);O(9,0,1.2,'#ff6a1a');O(12,0,1.2,'#ff9d2e');break}
   g.restore()}
-function icon(el,c){const g=el.getContext('2d'),w=el.width/2;g.scale(2,2);mdl(g,c,w/2,w*.6,w/48*([2,11,12,14].includes(c)?1.5:2.1),-1,1)}
+function icon(el,c){const g=el.getContext('2d'),w=el.width/2;g.scale(2,2);mdl(g,c,w/2,w*.6,w/48*([2,11,12,14,17,18,20,24,27,28,36].includes(c)?1.5:2.1),-1,1)}
 
 /* ---------- desen ---------- */
 function bar(x,y,w,f,mine){ctx.fillStyle='#000a';ctx.fillRect(x-w/2-1,y-3,w+2,6);ctx.fillStyle=mine?'#4cd964':'#ff5a4f';ctx.fillRect(x-w/2,y-2,w*Math.max(0,Math.min(1,f)),4)}
@@ -233,9 +393,19 @@ function drawEv(e,P,ex){
   const k=e[0],[x1,y1]=P(e[1],e[2]),[x2,y2]=P(e[3],e[4]),s=e[6]||20,f=ft(e),t=e[5]+ex,p=f?Math.min(1,t/f):1,r=Math.min(1,Math.max(0,t-f)/TOT[k]);
   const dot=(x,y,R,col,a)=>{ctx.globalAlpha=Math.max(0,Math.min(1,a));ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,Math.max(.1,R),0,7);ctx.fill()};
   ctx.save();
-  if(k==6){ctx.globalAlpha=.9*(1-r);ctx.strokeStyle=s==1?'#5dffa0':'#ff8ad8';ctx.lineWidth=3*(1-r)+1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
-  else if(k>10){if(t<f)dot(x2-70*(1-p),y2-240*(1-p),k==11?9:3,k==11?'#ff7a22':'#e8dcc0',1);
-    else{dot(x2,y2,s*(.6+.5*r),k==11?'#ff7a22':'#fff',.6*(1-r));dot(x2,y2,s*.5*(1+r),'#ffe08a',.8*(1-r))}}
+  /* zbor în arc de la turn spre țintă (vrăji) */
+  const hh=26+Math.hypot(x2-x1,y2-y1)*.18,pt=q=>{const u=Math.max(0,Math.min(1,q));return[x1+(x2-x1)*u,y1+(y2-y1)*u-Math.sin(Math.PI*u)*hh]};
+  if(k==14){ctx.globalAlpha=1-r;ctx.strokeStyle='#fff6a0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x1,y1);for(let i=1;i<6;i++)ctx.lineTo(x1+(x2-x1)*i/6+(i%2?7:-7),y1+(y2-y1)*i/6);ctx.lineTo(x2,y2);ctx.stroke();dot(x2,y2,14*(1-r)+4,'#ffe14a',.6*(1-r))}
+  else if(k==15){
+    if(t<f){const[bx,by]=pt(p);ctx.globalAlpha=1;ctx.translate(bx,by);ctx.rotate(t*14);ctx.fillStyle='#7a3a9a';ctx.fillRect(-3.5,-3,7,9);ctx.fillStyle='#c89a5a';ctx.fillRect(-1.6,-7,3.2,4)}
+    else{ctx.globalAlpha=.8*(1-r);ctx.strokeStyle='#5dffa0';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x2,y2,s*(.4+.6*r),0,7);ctx.stroke();dot(x2,y2,s*(.4+.6*r),'#5dffa0',.25*(1-r))}}
+  else if(k==6){ctx.globalAlpha=.9*(1-r);ctx.strokeStyle=s==1?'#5dffa0':'#ff8ad8';ctx.lineWidth=3*(1-r)+1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+  else if(k>10){
+    if(t<f){
+      if(k==12){ctx.globalAlpha=1;ctx.strokeStyle='#f1e6c8';ctx.lineWidth=1.6;for(let i=-2;i<3;i++){const u=p-Math.abs(i)*.025,[ax,ay]=pt(u),[bx,by]=pt(u-.07);ctx.beginPath();ctx.moveTo(ax+i*7,ay);ctx.lineTo(bx+i*7,by);ctx.stroke()}}
+      else{for(let i=3;i>0;i--){const[ax,ay]=pt(p-i*.05);dot(ax,ay,(k==11?8:5)-i*1.3,k==11?'#ffb03a':'#bfeaff',.4)}
+        const[ax,ay]=pt(p);dot(ax,ay,k==11?9:6,k==11?'#ff7a22':'#7fd4ff',1);dot(ax,ay,k==11?4.5:3,k==11?'#ffe08a':'#fff',1)}}
+    else{dot(x2,y2,s*(.6+.5*r),k==11?'#ff7a22':k==13?'#7fd4ff':'#fff',.6*(1-r));dot(x2,y2,s*.5*(1+r),k==13?'#dff6ff':'#ffe08a',.8*(1-r))}}
   else if(k==5){for(let i=0;i<8;i++){const u=(i/8+t*2.2)%1;dot(x1+(x2-x1)*u,y1+(y2-y1)*u,2+u*5,'#ff8a1a',.9*(1-r))}}
   else if(k==0||k==10){ctx.globalAlpha=1-r;ctx.strokeStyle=k==10?'#ffe9b0':'#fff';ctx.lineWidth=3*(1-r)+.5;ctx.beginPath();ctx.arc(x2,y2,k==10?6+s*r:6+7*r,0,7);ctx.stroke()}
   else if(t<f){const lift=k==1||k==7||k==4?Math.sin(Math.PI*p)*12:0;dot(x1+(x2-x1)*p,y1+(y2-y1)*p-lift,k==1?2:k==3?5:4,k==3?'#ff5a14':k==4?'#222':'#ffe27a',1)}
@@ -249,8 +419,14 @@ function draw(){
   ctx.fillStyle='#2f86c4';ctx.fillRect(0,RY-14,W,28);ctx.fillStyle='rgba(255,255,255,.3)';
   for(let x=10;x<W;x+=46)ctx.fillRect(x+(now*11%20),RY-6+(x%3)*5,16,2);
   for(const b of BR){ctx.fillStyle='#9b7a46';ctx.fillRect(b-20,RY-18,40,36);ctx.fillStyle='#7a5c30';for(let k=-14;k<18;k+=7)ctx.fillRect(b-20,RY+k,40,1.5)}
-  const c0=sel>=0?C[hand[sel]]:null;
-  if(c0){ctx.fillStyle=c0.sp?'rgba(255,120,40,.1)':'rgba(255,255,255,.12)';c0.sp?ctx.fillRect(0,0,W,H):ctx.fillRect(0,RY+15,W,H-RY-15)}
+  const c0=sel>=0?C[hand[sel]]:null,pul=.5+.5*Math.sin(now*5);
+  /* zona de plasare evidențiată: jumătatea ta (alb) + buzunarele deblocate (auriu) */
+  zones(me,i=>V.w[i][0]).forEach(([a,b,w,h],i)=>{
+    if(c0&&c0.sp)return;const pk=i>0,al=c0?0.17+0.07*pul:pk?0.08:0;if(!al)return;
+    if(flip){a=W-a-w;b=H-b-h}
+    ctx.fillStyle=pk?'rgba(246,195,67,'+(al+(c0?0.08:0))+')':'rgba(255,255,255,'+al+')';ctx.fillRect(a,b,w,h);
+    if(c0){ctx.save();ctx.strokeStyle=pk?'#f6c343':'#fff';ctx.globalAlpha=.85;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.lineDashOffset=-now*14;ctx.strokeRect(a+1.5,b+1.5,w-3,h-3);ctx.restore()}});
+  if(c0&&c0.sp){ctx.fillStyle='rgba(255,120,40,.1)';ctx.fillRect(0,0,W,H)}
   LAY.forEach((L,i)=>{const w=V.w[i][0],[x,y]=P(L.x,L.y),mine=L.t==me,s=L.k?22:17;
     if(w<=0){ctx.fillStyle='#5a5a5a';ctx.fillRect(x-s*.7,y-s*.4,s*1.4,s*.8);return}
     ctx.fillStyle=mine?'#2f7fd0':'#d0392f';ctx.fillRect(x-s,y-s,s*2,s*2);
@@ -258,17 +434,22 @@ function draw(){
     ctx.fillStyle='#1a1a1a';ctx.fillRect(x-4,y-2,8,s);
     if(L.k){ctx.fillStyle='#f6c343';ctx.fillRect(x-6,y-s-9,12,5)}
     bar(x,y-s-12,s*2,w/L.m,mine)});
-  const us=V.u.slice().sort((a,b)=>P(0,a[4])[1]-P(0,b[4])[1]);
-  for(const u of us){const D=C[u[1]],id=u[0];let m=sm[id];if(!m)m=sm[id]={x:u[3],y:u[4]};
+  const us=V.u.slice().sort((a,b)=>P(0,a[4])[1]-P(0,b[4])[1]),seen={};
+  for(const u of us){const D=C[u[1]],id=u[0];const m=sm[id]||{x:u[3],y:u[4]};seen[id]=m;
     m.x+=(u[3]-m.x)*.35;m.y+=(u[4]-m.y)*.35;
     const [x,y]=P(m.x,m.y),z=(D.k>1?.82:1)*Z[u[1]],yo=D.ar?8:0;
-    mdl(ctx,u[1],x,y-yo,z,u[2]==me?0:1,now+id);
+    mdl(ctx,u[1],x,y-yo,z,u[2]==me?0:1,now+id);if(u[6]){ctx.fillStyle='rgba(150,220,255,.45)';ctx.fillRect(x-9,y-yo-14,18,24)}
     if(u[5]<D.hp||D.life)bar(x,y-yo-15*z-3,18,u[5]/D.hp,u[2]==me)}
+  sm=seen;
   const ex=mode=='client'?Math.min(.15,(performance.now()-vt)/1000):0;
   for(const e of V.a)drawEv(e,P,ex);
-  if(c0&&ptr){ctx.save();ctx.globalAlpha=.65;
-    if(c0.sp){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ptr.x,ptr.y,c0.sr,0,7);ctx.stroke()}
-    else mdl(ctx,hand[sel],ptr.x,ptr.y,Z[hand[sel]],-1,now);
+  if(c0&&ptr){let gx=ptr.x,gy=ptr.y;if(flip){gx=W-gx;gy=H-gy}
+    const zok=c0.sp||canPut(me,gx,gy,i=>V.w[i][0]),ok=V.e[me]>=c0.c&&zok;
+    ctx.save();ctx.globalAlpha=.7;
+    if(c0.sp){ctx.strokeStyle=ok?'#fff':'#ff5a4f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ptr.x,ptr.y,c0.sr,0,7);ctx.stroke()}
+    else{const cl=!zok?'#ff5a4f':ok?'#4cd964':'#cfe3ea';ctx.fillStyle=cl;ctx.globalAlpha=.3;ctx.beginPath();ctx.ellipse(ptr.x,ptr.y+9,17,7,0,0,7);ctx.fill();ctx.globalAlpha=.9;ctx.strokeStyle=cl;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=.7;
+      mdl(ctx,hand[sel],ptr.x,ptr.y,Z[hand[sel]],-1,now);
+      if(!ok){ctx.strokeStyle='#ff5a4f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ptr.x,ptr.y,14,0,7);ctx.stroke()}}
     ctx.restore()}}
 
 /* ---------- interfață ---------- */
@@ -289,7 +470,7 @@ cv.addEventListener('pointerdown',e=>{if(sel>=0){const p=toC(e);if(p)play(sel,p)
 function play(i,p){const c=hand[i],D=C[c];if(!V||V.o!=null||!D)return;
   if(V.e[me]<D.c){sel=-1;syncSel();return}
   let x=p.x,y=p.y;if(flip){x=W-x;y=H-y}
-  if(!D.sp&&(me==0?y<RY+15:y>RY-15))return;
+  if(!D.sp&&!canPut(me,x,y,i=>V.w[i][0]))return;
   if(mode=='client'){try{net.send({c,x,y})}catch(e){return}}else if(!deploy(me,c,x,y))return;
   hand[i]=queue.shift();queue.push(c);sel=-1;renderHand()}
 function ui(){let a=0,b=0;LAY.forEach((L,i)=>{if(V.w[i][0]<=0){L.t==me?b++:a++}});
@@ -338,21 +519,75 @@ function lobby(tok,i){
         c.on('close',()=>gone(tok))});
       q.on('error',()=>{if(tok==qTok&&!net)lobby(tok,i+1)})}
     else if(e.type!='peer-unavailable'){$('sinfo').textContent='Eroare de conexiune ('+e.type+').';$('bBot2').style.display=''}})}
-function buildDeck(){const g=$('dg');g.innerHTML='';
-  C.forEach((D,i)=>{const b=document.createElement('button');b.className='dc'+(dk.includes(i)?' in':'');
-    b.innerHTML='<i class="co">'+D.c+'</i><canvas width="96" height="96"></canvas><b>'+D.n+'</b>';icon(b.querySelector('canvas'),i);
-    b.addEventListener('click',()=>{const j=dk.indexOf(i);if(j>=0)dk.splice(j,1);else if(dk.length<8)dk.push(i);
-      b.className='dc'+(dk.includes(i)?' in':'');
-      $('dn').innerHTML='<b>'+D.n+'</b> ('+dk.length+'/8): '+D.ds+(D.sp?'':' Viață '+D.hp+', atac '+D.d+'.')});
-    g.appendChild(b)})}
+
+/* ---------- deck: carduri extensibile cu raritate și statistici ---------- */
+const RAR=[['Comună','#8a9ba5'],['Rară','#f08a3c'],['Epică','#b04ae0'],['Legendară','#37d6e6']];
+const spdL=s=>s<=30?'Lentă':s<=45?'Medie':s<=60?'Rapidă':'Foarte rapidă';
+function stats(D){
+  if(D.sp){const a=[['Tip','Vrajă'],['Rază zonă',(D.sr/20).toFixed(1)+' pătr.']];
+    if(D.heal)a.push(['Vindecare',D.heal+' viață']);else{a.push(['Daune trupe',D.sd],['Daune turnuri',D.td]);if(D.bolt)a.push(['Lovește','Cele 3 ținte mai puternice']);if(D.fz)a.push(['Îngheață',D.fz+'s'])}
+    a.push(['Ținte',D.heal?'Doar aliați':'Sol și aer']);return a}
+  const a=[['Tip',D.b?'Clădire':D.sup?'Suport':'Trupă']];
+  if(D.k>1)a.push(['Unități',D.k]);
+  a.push(['Viață',D.hp]);if(!D.nat)a.push(['Daune/atac',D.d],['Viteză atac',D.cd+'s'],['Daune/sec',Math.round(D.d/D.cd)],['Rază',D.r<=20?'Corp la corp':(D.r/20).toFixed(1)+' pătr.']);if(D.spw)a.push(['Produce',C[D.spw].n+' / '+D.spt+'s']);
+  if(D.s)a.push(['Viteză',spdL(D.s)],['Mișcare',D.ar?'Aer':'Sol']);
+  if(!D.nat)a.push(['Ținte',D.tb?'Doar clădiri':D.ta?'Sol și aer':'Doar sol']);
+  if(D.pj)a.push(['Proiectil',D.pj]);
+  if(D.sa)a.push(['Zonă atac',(D.sa/20).toFixed(1)+' pătr.']);
+  if(D.hl)a.push(['Vindecare',D.hl+'/s']);
+  if(D.life)a.push(['Durată',D.life+'s']);
+  return a}
+/* previzualizare: mini-arenă cu simularea reală, doar cartea aleasă contra unor trupe de bătut */
+let pv=null,pvRaf=0,pvLast=0;
+function pvAdd(t,k,x,y,n){const E=C[k],m=n||E.k;for(let i=0;i<m;i++)S.u.push({id:++S.id,c:k,t,x:x+(i-(m-1)/2)*12,y:y+(i%2)*6,hp:E.hp,cd:.5,tg:null,lk:0,br:null,fl:null})}
+function pvReset(){
+  const c=dview,D=C[c];S={u:[],tw:mkTw(),e:[10,10],t:9999,ev:[],pd:[],id:0,o:null,pv:1};
+  S.tw.forEach(w=>{w.hp=w.m=1e9});pv={c,t:0,z:0,a:0,x:0,cv:pv&&pv.cv};
+  const foes=D.sp?(c==34?[0,6]:[7,3]):D.tb?[14]:D.b?(D.ta?[26,7]:[0,7]):D.c>=5?[0,6]:D.c>=3?[3,7]:[7];
+  foes.forEach((k,i)=>pvAdd(1,k,180+(i-(foes.length-1)/2)*(D.sp?30:50),(D.tb?375:330)-i*6,D.c<=1&&!D.sp&&!D.b?1:0));
+  if(D.sp){if(D.heal){pvAdd(0,0,170,405);pvAdd(0,6,200,420);S.u.forEach(u=>{if(u.t==0)u.hp*=.3})}}
+  else{pvAdd(0,c,180,D.b?425:440);if(D.sup)pvAdd(0,0,180,408)}}
+function pvStep(dt){
+  pv.t+=dt;S.e=[10,10];const D=C[pv.c];
+  if(D.sp&&!pv.x&&pv.t>(D.heal?1.3:.9)){pv.x=1;const sd=D.heal?0:1,l=S.u.filter(u=>u.t==sd&&!C[u.c].b);
+    if(l.length)deploy(0,pv.c,l.reduce((a,u)=>a+u.x,0)/l.length,l.reduce((a,u)=>a+u.y,0)/l.length+(sd?22:-8))}
+  step(dt);pv.z=S.u.some(u=>u.t==1)?0:pv.z+dt;
+  if(pv.t>8.5||pv.z>1.3)pvReset()}
+function pvDraw(){
+  const g=pv.cv.getContext('2d'),o=ctx,now=performance.now()/1000;ctx=g;
+  g.setTransform(2,0,0,2,-60,-580);
+  g.fillStyle='#3d7a46';g.fillRect(30,290,300,200);g.fillStyle='#468a50';for(let i=7;i<13;i+=2)g.fillRect(30,i*40,300,40);
+  [[90,410,17],[270,410,17],[180,468,22]].forEach(([x,y,s])=>{g.fillStyle='#2f7fd0';g.fillRect(x-s,y-s,s*2,s*2);g.fillStyle='#6ab0f5';for(let q=-1;q<2;q++)g.fillRect(x+q*s*.7-3,y-s-4,6,5);g.fillStyle='#1a1a1a';g.fillRect(x-4,y-2,8,s)});
+  for(const u of S.u.slice().sort((a,b)=>a.y-b.y)){const D=C[u.c],z=(D.k>1?.82:1)*Z[u.c],yo=D.ar?8:0;
+    mdl(g,u.c,u.x,u.y-yo,z,u.t?1:0,now+u.id);if(u.fz>0){g.fillStyle='rgba(150,220,255,.45)';g.fillRect(u.x-9,u.y-yo-14,18,24)}
+    if(u.hp<D.hp||D.life)bar(u.x,u.y-yo-15*z-3,18,u.hp/D.hp,u.t==0)}
+  for(const e of S.ev)drawEv(e,(x,y)=>[x,y],0);
+  ctx=o}
+function pvLoop(t){
+  const c=$('dg').querySelector('.pv');
+  if(!c||!$('deck').classList.contains('on')||dview<0){pvRaf=0;return}
+  pvRaf=requestAnimationFrame(pvLoop);
+  const dt=Math.min(.1,(t-pvLast)/1000||0);pvLast=t;
+  if(!pv||pv.c!=dview)pvReset();
+  pv.cv=c;pv.a+=dt;while(pv.a>=1/30){pvStep(1/30);pv.a-=1/30}
+  pvDraw()}
+function renderDeck(){
+  const card=i=>{const D=C[i];return '<div class="dc'+(dsel.includes(i)?' in':'')+(dview==i?' cur':'')+'" data-i="'+i+'" style="--rc:'+RAR[D.rr][1]+'"><i class="co">'+D.c+'</i><span class="ck">✓</span><div class="dh"><canvas width="96" height="96"></canvas><b>'+D.n+'</b></div></div>'};
+  const panel=i=>{const D=C[i],on=dsel.includes(i);return '<div class="dp dd" style="--rc:'+RAR[D.rr][1]+'"><div class="dh"><b>'+D.n+'</b><span class="rb">'+RAR[D.rr][0]+'</span></div><small>'+D.ds+'</small><canvas class="pv" width="600" height="400"></canvas><div class="sg">'+stats(D).map(([a,b])=>'<div><span>'+a+'</span><b>'+b+'</b></div>').join('')+'</div><button class="btn '+(on?'g':'')+'" data-t="'+i+'">'+(on?'Scoate din deck':'Adaugă în deck')+'</button></div>'};
+  const sec=(t,a,empty)=>'<div class="dt">'+t+'</div>'+(a.length?a.map((i,j)=>card(i)+((j%3==2||j==a.length-1)&&dview>=0&&a.slice(j-j%3,j+1).includes(dview)?panel(dview):'')).join(''):'<div class="dt dm">'+empty+'</div>');
+  $('dg').innerHTML=sec('În deck ('+dsel.length+'/8)',dsel,'Alege 8 cărți din lista de mai jos.')+sec('Restul cărților',C.map((_,i)=>i).filter(i=>!dsel.includes(i)),'Toate cărțile sunt în deck.');
+  $('dg').querySelectorAll('.dc').forEach(b=>{icon(b.querySelector('canvas'),+b.dataset.i);
+    b.onclick=()=>{const i=+b.dataset.i;dview=dview==i?-1:i;renderDeck();const o=$('dg').querySelector('.dp');if(o)o.scrollIntoView({block:'nearest'})}});
+  $('dg').querySelectorAll('[data-t]').forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.t,j=dsel.indexOf(i);if(j>=0)dsel.splice(j,1);else if(dsel.length<8)dsel.push(i);renderDeck();const o=$('dg').querySelector('.dp');if(o)o.scrollIntoView({block:'nearest'})});
+  $('dn').textContent=dsel.length+'/8 cărți, elixir mediu '+(dsel.reduce((a,i)=>a+C[i].c,0)/(dsel.length||1)).toFixed(1);$('dSave').disabled=dsel.length!=8;if(dview>=0&&!pvRaf){pvLast=performance.now();pvRaf=requestAnimationFrame(pvLoop)}}
 $('bOn').onclick=online;
 $('bBot').onclick=startBot;
 $('bBot2').onclick=startBot;
 $('bCan').onclick=toMenu;
 $('bMn').onclick=toMenu;
 $('bAg').onclick=()=>rem=='bot'?startBot():online();
-$('bDk').onclick=()=>{dk=deck.slice();$('dn').textContent='Alege 8 cărți ('+dk.length+'/8). Atinge o carte ca să o adaugi sau să o scoți.';buildDeck();show('deck')};
+$('bDk').onclick=()=>{dsel=deck.slice();dview=-1;pv=null;renderDeck();show('deck')};
 $('dBack').onclick=()=>show('menu');
-$('dSave').onclick=()=>{if(dk.length!=8){$('dn').textContent='Alege exact 8 cărți ('+dk.length+'/8).';return}
-  deck=dk.slice();try{localStorage.setItem('ad_deck',JSON.stringify(deck))}catch(e){}show('menu')};
+$('dSave').onclick=()=>{if(dsel.length!=8)return;deck=dsel.slice();try{localStorage.setItem('ad_deck',JSON.stringify(deck))}catch(e){}show('menu')};
+if(!window.Peer){$('bOn').disabled=true;$('stat').textContent='Online indisponibil (PeerJS nu s-a încărcat). Poți juca contra bot.'}
 </script></body></html>
